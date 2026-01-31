@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="GIF 合成器 - 多张图片合成为 GIF，纯本地处理，保护隐私">
+  <title>GIF 合成器 - Jack's AI Tools</title>
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <style>
+    /* GIF 工具特有样式 - 整合到极简白风格 */
+    .gif-tool-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .gif-main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    
+    @media (min-width: 1024px) {
+      .gif-main {
+        grid-template-columns: 320px 1fr;
+      }
+    }
+    
+    /* 预览区 */
+    .preview-section {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+    }
+    
+    .preview-section h3 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .preview-container {
+      aspect-ratio: 1;
+      background: white;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--color-border-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .preview-img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    .preview-placeholder {
+      color: var(--color-text-secondary);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px;
+    }
+    
+    .frame-indicator {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    /* 配置面板 */
+    .config-section {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+    }
+    
+    .config-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-accent);
+      margin-bottom: 20px;
+    }
+    
+    .config-item {
+      margin-bottom: 20px;
+    }
+    
+    .config-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .config-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+    }
+    
+    .config-value {
+      background: rgba(37, 99, 235, 0.1);
+      color: var(--color-accent);
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    /* 滑块样式 */
+    input[type=range] {
+      width: 100%;
+      height: 4px;
+      background: var(--color-border);
+      border-radius: 2px;
+      appearance: none;
+      cursor: pointer;
+    }
+    
+    input[type=range]::-webkit-slider-thumb {
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+    
+    input[type=range]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      cursor: pointer;
+    }
+    
+    /* 尺寸输入 */
+    .size-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    
+    .size-input-group {
+      position: relative;
+    }
+    
+    .size-input-group span {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-text-secondary);
+    }
+    
+    .size-input {
+      width: 100%;
+      padding: 10px 12px 10px 28px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 600;
+      background: var(--color-bg-secondary);
+      transition: var(--transition);
+    }
+    
+    .size-input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      background: white;
+    }
+    
+    .size-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .lock-ratio {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--color-accent);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .lock-ratio input {
+      width: 14px;
+      height: 14px;
+      accent-color: var(--color-accent);
+    }
+    
+    /* 上传区 */
+    .upload-section {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+    }
+    
+    .drop-zone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .drop-zone:hover,
+    .drop-zone--over {
+      border-color: var(--color-accent);
+      background: rgba(37, 99, 235, 0.02);
+    }
+    
+    .drop-zone-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+      color: var(--color-accent);
+      transition: var(--transition);
+    }
+    
+    .drop-zone:hover .drop-zone-icon,
+    .drop-zone--over .drop-zone-icon {
+      background: rgba(37, 99, 235, 0.1);
+      transform: scale(1.05);
+    }
+    
+    .drop-zone-text {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+    
+    .drop-zone-hint {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    
+    /* 素材库 */
+    .assets-section {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+      min-height: 300px;
+    }
+    
+    .assets-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .assets-title {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .assets-count {
+      background: var(--color-accent);
+      color: white;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+    }
+    
+    .clear-btn {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: var(--transition);
+    }
+    
+    .clear-btn:hover {
+      color: #dc2626;
+    }
+    
+    .assets-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    
+    @media (min-width: 640px) {
+      .assets-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .assets-grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
+    }
+    
+    .asset-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 2px solid var(--color-border-light);
+      background: white;
+    }
+    
+    .asset-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .asset-delete {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 24px;
+      height: 24px;
+      background: #dc2626;
+      color: white;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      opacity: 0;
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+    
+    .asset-item:hover .asset-delete {
+      opacity: 1;
+    }
+    
+    .asset-index {
+      position: absolute;
+      bottom: 6px;
+      left: 6px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+    }
+    
+    .empty-state-gif {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--color-text-secondary);
+      opacity: 0.5;
+    }
+    
+    .empty-state-gif svg {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+    }
+    
+    /* 生成按钮 */
+    .generate-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--color-accent);
+      color: white;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      margin-top: 8px;
+      border: none;
+    }
+    
+    .generate-btn:hover:not(:disabled) {
+      background: var(--color-accent-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .generate-btn:disabled {
+      background: var(--color-border);
+      color: var(--color-text-secondary);
+      cursor: not-allowed;
+    }
+    
+    /* 结果卡片 */
+    .result-card {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      border: 2px solid #22c55e;
+      margin-top: 24px;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .result-title {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .result-title svg {
+      color: #22c55e;
+    }
+    
+    .result-subtitle {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+    
+    .close-result {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-full);
+      color: var(--color-text-secondary);
+      transition: var(--transition);
+    }
+    
+    .close-result:hover {
+      background: var(--color-bg-secondary);
+      color: var(--color-text);
+    }
+    
+    .result-body {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    @media (min-width: 768px) {
+      .result-body {
+        flex-direction: row;
+      }
+    }
+    
+    .result-preview {
+      flex: 1;
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--color-border-light);
+    }
+    
+    .result-preview img {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .result-info {
+      width: 100%;
+    }
+    
+    @media (min-width: 768px) {
+      .result-info {
+        width: 280px;
+      }
+    }
+    
+    .result-meta {
+      background: var(--color-bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    
+    .result-meta-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+    
+    .result-meta-item:last-child {
+      margin-bottom: 0;
+    }
+    
+    .result-meta-label {
+      color: var(--color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .result-meta-value {
+      font-weight: 600;
+    }
+    
+    .download-btn {
+      width: 100%;
+      padding: 16px;
+      background: #22c55e;
+      color: white;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      border: none;
+    }
+    
+    .download-btn:hover {
+      background: #16a34a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+    
+    /* 进度遮罩 */
+    .progress-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    
+    .progress-overlay.active {
+      display: flex;
+    }
+    
+    .progress-spinner {
+      width: 80px;
+      height: 80px;
+      position: relative;
+      margin-bottom: 32px;
+    }
+    
+    .progress-spinner::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 6px solid var(--color-bg-secondary);
+      border-radius: 50%;
+    }
+    
+    .progress-spinner::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 6px solid transparent;
+      border-top-color: var(--color-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .progress-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .progress-hint {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      margin-bottom: 24px;
+    }
+    
+    .progress-bar-wrapper {
+      width: 100%;
+      max-width: 320px;
+      height: 6px;
+      background: var(--color-border);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+    
+    /* 引擎指示器 */
+    .engine-indicator {
+      position: absolute;
+      top: 80px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--color-border);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .engine-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    
+    .engine-dot.loading {
+      background: #fbbf24;
+    }
+    
+    .engine-dot.ready {
+      background: #22c55e;
+      animation: none;
+    }
+    
+    .engine-dot.error {
+      background: #dc2626;
+      animation: none;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header 导航 -->
+  <header class="header">
+    <div class="container header-content">
+      <a href="../../" class="logo">
+        <div class="logo-icon">J</div>
+        <span>Jack's AI Tools</span>
+      </a>
+      <nav class="nav">
+        <a href="../../" class="nav-link">首页</a>
+        <a href="../" class="nav-link">工具集</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 引擎状态指示器 -->
+  <div id="engineIndicator" class="engine-indicator" style="display: none;">
+    <span id="engineDot" class="engine-dot loading"></span>
+    <span id="engineText">引擎初始化中...</span>
+  </div>
+
+  <!-- 主内容 -->
+  <main class="tool-container">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb">
+      <a href="../">工具集</a>
+      <span>/</span>
+      <span>GIF 合成器</span>
+    </nav>
+
+    <!-- 工具头部 -->
+    <div class="tool-header">
+      <div class="tool-header-icon">🎬</div>
+      <div class="tool-header-info">
+        <h1>GIF 合成器</h1>
+        <p>多张图片合成为 GIF，纯本地处理，保护隐私</p>
+      </div>
+    </div>
+
+    <!-- GIF 工具主体 -->
+    <div class="gif-tool-wrapper">
+      <div class="gif-main">
+        <!-- 左侧：预览和配置 -->
+        <div class="left-panel" style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- 预览区 -->
+          <div class="preview-section">
+            <h3>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="10 8 16 12 10 16 10 8"/>
+              </svg>
+              效果实时预览
+            </h3>
+            <div class="preview-container">
+              <img id="livePreviewImg" class="preview-img" style="display: none;" src="" alt="预览">
+              <div id="livePreviewPlaceholder" class="preview-placeholder">
+                请在右侧上传图片<br>动画效果将在此处自动生成
+              </div>
+              <div id="frameIndicator" class="frame-indicator">帧数: 0/0</div>
+            </div>
+          </div>
+
+          <!-- 配置区 -->
+          <div class="config-section">
+            <div class="config-title">参数配置</div>
+            
+            <div class="config-item">
+              <div class="config-label">
+                <span>帧延迟 (毫秒)</span>
+                <span id="delayVal" class="config-value">1800ms</span>
+              </div>
+              <input type="range" id="delay" min="100" max="10000" step="100" value="1800">
+            </div>
+
+            <div class="config-item">
+              <div class="size-label-row">
+                <span class="config-label" style="margin: 0;">画布尺寸 (偶数优化)</span>
+                <label class="lock-ratio">
+                  <input type="checkbox" id="lockRatio" checked>
+                  <span>锁定比例</span>
+                </label>
+              </div>
+              <div class="size-inputs">
+                <div class="size-input-group">
+                  <span>W</span>
+                  <input type="number" id="gifWidth" value="0" class="size-input">
+                </div>
+                <div class="size-input-group">
+                  <span>H</span>
+                  <input type="number" id="gifHeight" value="0" class="size-input">
+                </div>
+              </div>
+            </div>
+
+            <button id="generateBtn" class="generate-btn" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m5 12 7-7 7 7"/>
+                <path d="M12 19V5"/>
+              </svg>
+              生成并导出 GIF
+            </button>
+          </div>
+        </div>
+
+        <!-- 右侧：上传和素材 -->
+        <div class="right-panel" style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- 上传区 -->
+          <div class="upload-section" style="padding: 0; border: none; background: transparent;">
+            <div id="dropZone" class="drop-zone">
+              <input type="file" id="fileInput" multiple accept="image/*" style="display: none;">
+              <div class="drop-zone-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+              </div>
+              <div class="drop-zone-text">导入序列图片</div>
+              <div class="drop-zone-hint">支持拖拽上传，图片将被填充至白色背景</div>
+            </div>
+          </div>
+
+          <!-- 素材库 -->
+          <div class="assets-section">
+            <div class="assets-header">
+              <div class="assets-title">
+                素材库
+                <span id="imgCount" class="assets-count">0</span>
+              </div>
+              <button id="clearAll" class="clear-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+                全部清空
+              </button>
+            </div>
+            <div id="imageList" class="assets-grid"></div>
+            <div id="emptyState" class="empty-state-gif">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                <circle cx="9" cy="9" r="2"/>
+                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+              </svg>
+              <p>素材库为空</p>
+            </div>
+          </div>
+
+          <!-- 结果卡片 -->
+          <div id="resultCard" class="result-card" style="display: none;">
+            <div class="result-header">
+              <div>
+                <div class="result-title">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  制作成功
+                </div>
+                <div class="result-subtitle">白色背景填充，黑边已消除</div>
+              </div>
+              <button id="closeResult" class="close-result">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 6 6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="result-body">
+              <div class="result-preview">
+                <img id="gifPreview" src="" alt="GIF 预览">
+              </div>
+              <div class="result-info">
+                <div class="result-meta">
+                  <div class="result-meta-item">
+                    <span class="result-meta-label">文件大小</span>
+                    <span id="resInfoSize" class="result-meta-value">--</span>
+                  </div>
+                  <div class="result-meta-item">
+                    <span class="result-meta-label">分辨率</span>
+                    <span id="resInfoDim" class="result-meta-value">--</span>
+                  </div>
+                </div>
+                <a id="downloadBtn" href="#" download="gifify-export.gif" class="download-btn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <path d="M7 10l5 5 5-5"/>
+                    <path d="M12 15V3"/>
+                  </svg>
+                  下载 GIF 文件
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 进度遮罩 -->
+  <div id="progressOverlay" class="progress-overlay">
+    <div class="progress-spinner"></div>
+    <div class="progress-title">GIF 处理中...</div>
+    <div class="progress-hint">正在本地进行渲染，请勿离开此页面</div>
+    <div class="progress-bar-wrapper">
+      <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+    </div>
+    <div id="progressText" class="progress-text">0%</div>
+  </div>
+
+  <!-- Footer 页脚 -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-links">
+        <a href="mailto:269452034@qq.com" class="footer-email" id="email-copy">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+          <span>269452034@qq.com</span>
+        </a>
+      </div>
+      <p class="footer-copyright">© 2025 Jack Ding. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/main.js"></script>
+  <script>
+    // ========================================
+    // GIF 工具核心逻辑
+    // ========================================
+    
+    // 加载 gifshot 引擎
+    (function() {
+      const CDN_SOURCES = [
+        "https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.3.2/gifshot.min.js",
+        "https://cdn.staticfile.net/gifshot/0.3.2/gifshot.min.js",
+        "https://lib.baomitu.com/gifshot/0.3.2/gifshot.min.js"
+      ];
+      let currentIndex = 0;
+      
+      function updateUI(status) {
+        const dot = document.getElementById('engineDot');
+        const text = document.getElementById('engineText');
+        const container = document.getElementById('engineIndicator');
+        if (!dot || !text) return;
+        
+        container.style.display = 'flex';
+        
+        switch(status) {
+          case 'loading':
+            dot.className = 'engine-dot loading';
+            text.textContent = `载入中 (${currentIndex + 1}/${CDN_SOURCES.length})`;
+            break;
+          case 'ready':
+            dot.className = 'engine-dot ready';
+            text.textContent = '离线引擎就绪';
+            break;
+          case 'error':
+            dot.className = 'engine-dot error';
+            text.textContent = '载入失败，请刷新';
+            break;
+        }
+      }
+      
+      function tryNext() {
+        if (currentIndex >= CDN_SOURCES.length) {
+          updateUI('error');
+          return;
+        }
+        updateUI('loading');
+        
+        const script = document.createElement('script');
+        script.src = CDN_SOURCES[currentIndex];
+        script.onload = () => {
+          if (typeof gifshot !== 'undefined') {
+            updateUI('ready');
+            window.engineReady = true;
+          } else {
+            handleError();
+          }
+        };
+        script.onerror = handleError;
+        document.head.appendChild(script);
+      }
+      
+      function handleError() {
+        currentIndex++;
+        tryNext();
+      }
+      
+      window.addEventListener('DOMContentLoaded', tryNext);
+    })();
+
+    // 全局状态
+    let images = [];
+    let previewIdx = 0;
+    let previewTimer = null;
+    let currentRatio = 1;
+
+    // DOM 元素
+    const el = {
+      fileInput: document.getElementById('fileInput'),
+      dropZone: document.getElementById('dropZone'),
+      imageList: document.getElementById('imageList'),
+      imgCount: document.getElementById('imgCount'),
+      emptyState: document.getElementById('emptyState'),
+      generateBtn: document.getElementById('generateBtn'),
+      clearAll: document.getElementById('clearAll'),
+      delayInput: document.getElementById('delay'),
+      delayVal: document.getElementById('delayVal'),
+      gifWidth: document.getElementById('gifWidth'),
+      gifHeight: document.getElementById('gifHeight'),
+      lockRatio: document.getElementById('lockRatio'),
+      livePreviewImg: document.getElementById('livePreviewImg'),
+      livePreviewPlaceholder: document.getElementById('livePreviewPlaceholder'),
+      frameIndicator: document.getElementById('frameIndicator'),
+      progressOverlay: document.getElementById('progressOverlay'),
+      progressBar: document.getElementById('progressBar'),
+      progressText: document.getElementById('progressText'),
+      resultCard: document.getElementById('resultCard'),
+      closeResult: document.getElementById('closeResult'),
+      gifPreview: document.getElementById('gifPreview'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      resInfoSize: document.getElementById('resInfoSize'),
+      resInfoDim: document.getElementById('resInfoDim')
+    };
+
+    // 工具函数
+    const makeEven = (val) => {
+      let n = parseInt(val);
+      return n % 2 === 0 ? n : n + 1;
+    };
+
+    // 尺寸输入处理
+    el.gifWidth.onblur = () => {
+      el.gifWidth.value = makeEven(el.gifWidth.value);
+    };
+
+    el.gifHeight.onblur = () => {
+      el.gifHeight.value = makeEven(el.gifHeight.value);
+    };
+
+    el.gifWidth.oninput = () => {
+      if (el.lockRatio.checked && currentRatio) {
+        el.gifHeight.value = makeEven(el.gifWidth.value / currentRatio);
+      }
+    };
+
+    el.gifHeight.oninput = () => {
+      if (el.lockRatio.checked && currentRatio) {
+        el.gifWidth.value = makeEven(el.gifHeight.value * currentRatio);
+      }
+    };
+
+    el.delayInput.oninput = () => {
+      el.delayVal.textContent = el.delayInput.value + 'ms';
+      startPreview();
+    };
+
+    // 文件上传
+    el.dropZone.onclick = () => el.fileInput.click();
+    
+    el.dropZone.ondragover = (e) => {
+      e.preventDefault();
+      el.dropZone.classList.add('drop-zone--over');
+    };
+    
+    el.dropZone.ondragleave = () => {
+      el.dropZone.classList.remove('drop-zone--over');
+    };
+    
+    el.dropZone.ondrop = (e) => {
+      e.preventDefault();
+      el.dropZone.classList.remove('drop-zone--over');
+      handleFiles(e.dataTransfer.files);
+    };
+    
+    el.fileInput.onchange = (e) => handleFiles(e.target.files);
+
+    async function handleFiles(files) {
+      const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
+      if (arr.length === 0) return;
+      
+      for (const f of arr) {
+        const data = await readFileAsBase64(f);
+        const info = await getImageInfo(data);
+        if (images.length === 0) {
+          currentRatio = info.width / info.height;
+          el.gifWidth.value = makeEven(info.width);
+          el.gifHeight.value = makeEven(info.height);
+        }
+        images.push(data);
+      }
+      renderAssetList();
+      startPreview();
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise(res => {
+        const reader = new FileReader();
+        reader.onload = (e) => res(e.target.result);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function getImageInfo(src) {
+      return new Promise(res => {
+        const i = new Image();
+        i.onload = () => res({ width: i.width, height: i.height });
+        i.src = src;
+      });
+    }
+
+    async function processFrame(base64, targetW, targetH) {
+      return new Promise(res => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = targetW;
+          canvas.height = targetH;
+          const ctx = canvas.getContext('2d');
+          
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+
+          const scale = Math.max(targetW / img.width, targetH / img.height);
+          const drawW = img.width * scale;
+          const drawH = img.height * scale;
+          const x = (targetW - drawW) / 2;
+          const y = (targetH - drawH) / 2;
+          
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, targetW, targetH);
+          ctx.drawImage(img, x, y, drawW, drawH);
+          res(canvas.toDataURL('image/png'));
+        };
+        img.src = base64;
+      });
+    }
+
+    function renderAssetList() {
+      el.imageList.innerHTML = '';
+      
+      images.forEach((src, i) => {
+        const div = document.createElement('div');
+        div.className = 'asset-item';
+        div.innerHTML = `
+          <img src="${src}" alt="素材 ${i + 1}">
+          <button class="asset-delete" onclick="removeImage(${i})">×</button>
+          <div class="asset-index">#${i + 1}</div>
+        `;
+        el.imageList.appendChild(div);
+      });
+      
+      el.imgCount.textContent = images.length;
+      el.emptyState.style.display = images.length ? 'none' : 'block';
+      el.generateBtn.disabled = images.length < 2;
+    }
+
+    window.removeImage = (i) => {
+      images.splice(i, 1);
+      renderAssetList();
+      startPreview();
+    };
+
+    function startPreview() {
+      clearInterval(previewTimer);
+      
+      if (images.length < 2) {
+        el.livePreviewImg.style.display = 'none';
+        el.livePreviewPlaceholder.style.display = 'block';
+        el.frameIndicator.textContent = '帧数: 0/0';
+        return;
+      }
+      
+      el.livePreviewImg.style.display = 'block';
+      el.livePreviewPlaceholder.style.display = 'none';
+      previewIdx = 0;
+      
+      const update = () => {
+        if (images.length < 2) return;
+        el.livePreviewImg.src = images[previewIdx];
+        el.frameIndicator.textContent = `帧数: ${previewIdx + 1}/${images.length}`;
+        previewIdx = (previewIdx + 1) % images.length;
+      };
+      
+      update();
+      previewTimer = setInterval(update, parseInt(el.delayInput.value));
+    }
+
+    // 生成 GIF
+    el.generateBtn.onclick = async () => {
+      if (typeof gifshot === 'undefined') {
+        showToast('引擎尚未就绪，请稍候...');
+        return;
+      }
+      
+      const width = makeEven(el.gifWidth.value);
+      const height = makeEven(el.gifHeight.value);
+      
+      el.progressOverlay.classList.add('active');
+      el.resultCard.style.display = 'none';
+      
+      let p = 0;
+      const progInt = setInterval(() => {
+        p += (100 - p) * 0.05;
+        el.progressBar.style.width = p + '%';
+        el.progressText.textContent = Math.round(p) + '%';
+      }, 200);
+
+      const processedFrames = [];
+      for (let i = 0; i < images.length; i++) {
+        processedFrames.push(await processFrame(images[i], width, height));
+      }
+
+      gifshot.createGIF({
+        images: processedFrames,
+        gifWidth: width,
+        gifHeight: height,
+        interval: parseInt(el.delayInput.value) / 1000,
+        numWorkers: 2,
+        sampleInterval: 1
+      }, (obj) => {
+        clearInterval(progInt);
+        el.progressBar.style.width = '100%';
+        el.progressText.textContent = '100%';
+        
+        if (!obj.error) {
+          el.gifPreview.src = obj.image;
+          el.downloadBtn.href = obj.image;
+          el.resInfoDim.textContent = width + ' × ' + height;
+          
+          const byteLen = Math.round((obj.image.length * 3) / 4);
+          el.resInfoSize.textContent = byteLen > 1024 * 1024 
+            ? (byteLen / (1024 * 1024)).toFixed(2) + ' MB' 
+            : (byteLen / 1024).toFixed(1) + ' KB';
+          
+          setTimeout(() => {
+            el.progressOverlay.classList.remove('active');
+            el.resultCard.style.display = 'block';
+            el.resultCard.scrollIntoView({ behavior: 'smooth' });
+            showToast('制作成功，白色背景已填充');
+          }, 500);
+        } else {
+          el.progressOverlay.classList.remove('active');
+          showToast('生成失败，请尝试减小分辨率');
+        }
+      });
+    };
+
+    el.clearAll.onclick = () => {
+      images = [];
+      renderAssetList();
+      startPreview();
+      el.resultCard.style.display = 'none';
+    };
+
+    el.closeResult.onclick = () => {
+      el.resultCard.style.display = 'none';
+    };
+  </script>
+</body>
+</html>
