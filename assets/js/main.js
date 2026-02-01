@@ -34,8 +34,13 @@ function renderToolCard(tool, basePath = '') {
     `<span class="card-tag">${tag}</span>`
   ).join('');
   
+  // 外部链接处理
+  const isExternal = tool.external || tool.url.startsWith('http');
+  const url = isExternal ? tool.url : `${basePath}${tool.url}`;
+  const externalAttrs = isExternal ? 'target="_blank" rel="noopener"' : '';
+  
   return `
-    <a href="${basePath}${tool.url}" class="tool-link fade-in">
+    <a href="${url}" ${externalAttrs} class="tool-link fade-in">
       <div class="card">
         <div class="card-icon">${tool.icon}</div>
         <h3 class="card-title">${tool.name}</h3>

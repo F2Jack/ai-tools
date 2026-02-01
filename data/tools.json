@@ -17,6 +17,16 @@
       "tags": ["PDF 处理", "本地运行"],
       "url": "./tools/pdf-splitter/",
       "date": "2025-02"
+    },
+    {
+      "id": "customs-assistant",
+      "name": "智能报关助手",
+      "description": "AI 辅助报关单据处理，提升通关效率",
+      "icon": "🚢",
+      "tags": ["AI 工具", "外部链接"],
+      "url": "https://24c6331b2348438f9662d10eb04cb6c8.prod.enter.pro/",
+      "date": "2025-02",
+      "external": true
     }
   ]
 }
