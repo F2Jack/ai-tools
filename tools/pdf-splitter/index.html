@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="PDF 拆分器 - 按页码提取 PDF 页面，纯本地处理，保护隐私">
+  <title>PDF 拆分器 - Jack's AI Tools</title>
+  <link rel="stylesheet" href="../../assets/css/style.css">
+  <style>
+    /* PDF 工具特有样式 */
+    .pdf-tool-wrapper {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .pdf-main {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+    
+    @media (min-width: 1024px) {
+      .pdf-main {
+        grid-template-columns: 360px 1fr;
+      }
+    }
+    
+    /* 左侧控制面板 */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .control-section {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+    }
+    
+    .control-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-accent);
+      margin-bottom: 16px;
+    }
+    
+    /* 上传区 */
+    .upload-area {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--color-bg-secondary);
+    }
+    
+    .upload-area:hover,
+    .upload-area--active {
+      border-color: var(--color-accent);
+      background: rgba(37, 99, 235, 0.02);
+    }
+    
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      color: var(--color-accent);
+    }
+    
+    .upload-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: 4px;
+    }
+    
+    .upload-hint {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: white;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-light);
+      margin-top: 12px;
+    }
+    
+    .file-icon {
+      width: 40px;
+      height: 40px;
+      background: #dc2626;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    
+    .file-details {
+      flex: 1;
+      min-width: 0;
+    }
+    
+    .file-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .file-meta {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 2px;
+    }
+    
+    .file-remove {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-full);
+      color: var(--color-text-secondary);
+      transition: var(--transition);
+    }
+    
+    .file-remove:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    
+    /* 页码输入 */
+    .page-input-group {
+      margin-bottom: 16px;
+    }
+    
+    .page-input-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+    }
+    
+    .page-input-hint {
+      font-size: 10px;
+      color: var(--color-accent);
+      background: rgba(37, 99, 235, 0.1);
+      padding: 2px 6px;
+      border-radius: var(--radius-sm);
+    }
+    
+    .page-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      background: var(--color-bg-secondary);
+      transition: var(--transition);
+    }
+    
+    .page-input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      background: white;
+    }
+    
+    .page-input::placeholder {
+      color: var(--color-text-secondary);
+      opacity: 0.6;
+    }
+    
+    .page-input-error {
+      border-color: #dc2626 !important;
+      background: #fef2f2 !important;
+    }
+    
+    .page-error-msg {
+      font-size: 11px;
+      color: #dc2626;
+      margin-top: 6px;
+      display: none;
+    }
+    
+    .page-error-msg.show {
+      display: block;
+    }
+    
+    /* 统计信息 */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .stat-item {
+      background: white;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border-light);
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--color-accent);
+      line-height: 1;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: var(--color-text-secondary);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* 操作按钮 */
+    .action-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-lg);
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+    }
+    
+    .action-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .btn-primary {
+      background: var(--color-accent);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background: var(--color-accent-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .btn-success {
+      background: #22c55e;
+      color: white;
+    }
+    
+    .btn-success:hover:not(:disabled) {
+      background: #16a34a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+    
+    /* 右侧预览区 */
+    .preview-panel {
+      background: var(--color-bg);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      border: 1px solid var(--color-border);
+      min-height: 400px;
+    }
+    
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .preview-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .preview-count {
+      background: var(--color-accent);
+      color: white;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+    }
+    
+    .preview-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .preview-action-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: white;
+      color: var(--color-text-secondary);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    
+    .preview-action-btn:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+    
+    /* 页面网格 */
+    .pages-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 8px;
+    }
+    
+    @media (min-width: 640px) {
+      .pages-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+    
+    @media (min-width: 1024px) {
+      .pages-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    
+    .page-item {
+      position: relative;
+      aspect-ratio: 0.707;
+      background: white;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--color-border-light);
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    
+    .page-item:hover {
+      border-color: var(--color-accent);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .page-item.selected {
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+    }
+    
+    .page-item.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      background: var(--color-accent);
+      color: white;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    
+    .page-thumbnail {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      padding: 8px;
+    }
+    
+    .page-number {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+    }
+    
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      color: var(--color-text-secondary);
+    }
+    
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 16px;
+      opacity: 0.3;
+    }
+    
+    /* 进度遮罩 */
+    .progress-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(10px);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    
+    .progress-overlay.active {
+      display: flex;
+    }
+    
+    .progress-spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid var(--color-border);
+      border-top-color: var(--color-accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 24px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .progress-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .progress-hint {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin-bottom: 24px;
+    }
+    
+    .progress-bar-wrapper {
+      width: 100%;
+      max-width: 300px;
+      height: 6px;
+      background: var(--color-border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    /* 结果卡片 */
+    .result-card {
+      background: #f0fdf4;
+      border: 2px solid #22c55e;
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-top: 16px;
+    }
+    
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .result-icon {
+      width: 40px;
+      height: 40px;
+      background: #22c55e;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+    
+    .result-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    
+    .result-meta {
+      font-size: 12px;
+      color: var(--color-text-secondary);
+    }
+    
+    /* 快速选择 */
+    .quick-select {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .quick-btn {
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--color-border);
+      background: white;
+      color: var(--color-text-secondary);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    
+    .quick-btn:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background: rgba(37, 99, 235, 0.05);
+    }
+    
+    /* 滚动条样式 */
+    .pages-grid::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .pages-grid::-webkit-scrollbar-track {
+      background: var(--color-bg-secondary);
+      border-radius: 3px;
+    }
+    
+    .pages-grid::-webkit-scrollbar-thumb {
+      background: var(--color-border);
+      border-radius: 3px;
+    }
+    
+    .pages-grid::-webkit-scrollbar-thumb:hover {
+      background: var(--color-text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header 导航 -->
+  <header class="header">
+    <div class="container header-content">
+      <a href="../../" class="logo">
+        <div class="logo-icon">J</div>
+        <span>Jack's AI Tools</span>
+      </a>
+      <nav class="nav">
+        <a href="../../" class="nav-link">首页</a>
+        <a href="../" class="nav-link">工具集</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- 主内容 -->
+  <main class="tool-container">
+    <!-- 面包屑 -->
+    <nav class="breadcrumb">
+      <a href="../">工具集</a>
+      <span>/</span>
+      <span>PDF 拆分器</span>
+    </nav>
+
+    <!-- 工具头部 -->
+    <div class="tool-header">
+      <div class="tool-header-icon">📄</div>
+      <div class="tool-header-info">
+        <h1>PDF 拆分器</h1>
+        <p>按页码提取 PDF 页面，纯本地处理，保护隐私</p>
+      </div>
+    </div>
+
+    <!-- PDF 工具主体 -->
+    <div class="pdf-tool-wrapper">
+      <div class="pdf-main">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+          <!-- 上传区 -->
+          <div class="control-section">
+            <div class="control-title">选择文件</div>
+            <div id="uploadArea" class="upload-area">
+              <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+              <div class="upload-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <div class="upload-text">点击或拖拽上传 PDF</div>
+              <div class="upload-hint">文件仅在本地处理，不会上传服务器</div>
+            </div>
+            <div id="fileInfo" class="file-info" style="display: none;">
+              <div class="file-icon">PDF</div>
+              <div class="file-details">
+                <div id="fileName" class="file-name">--</div>
+                <div id="fileMeta" class="file-meta">-- 页</div>
+              </div>
+              <button id="removeFile" class="file-remove">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- 页码配置 -->
+          <div class="control-section">
+            <div class="control-title">页码选择</div>
+            
+            <div class="page-input-group">
+              <div class="page-input-label">
+                <span>输入页码</span>
+                <span class="page-input-hint">支持 1,3-5,7 格式</span>
+              </div>
+              <input type="text" id="pageInput" class="page-input" placeholder="例如：1, 3-5, 7" disabled>
+              <div id="pageError" class="page-error-msg">请输入有效的页码</div>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div id="totalPages" class="stat-value">0</div>
+                <div class="stat-label">总页数</div>
+              </div>
+              <div class="stat-item">
+                <div id="selectedPages" class="stat-value">0</div>
+                <div class="stat-label">已选页数</div>
+              </div>
+            </div>
+
+            <div class="quick-select">
+              <button class="quick-btn" data-action="all">全选</button>
+              <button class="quick-btn" data-action="odd">奇数页</button>
+              <button class="quick-btn" data-action="even">偶数页</button>
+              <button class="quick-btn" data-action="invert">反选</button>
+              <button class="quick-btn" data-action="clear">清空</button>
+            </div>
+
+            <button id="splitBtn" class="action-btn btn-primary" style="margin-top: 16px;" disabled>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              拆分并下载
+            </button>
+          </div>
+
+          <!-- 结果卡片 -->
+          <div id="resultCard" class="result-card" style="display: none;">
+            <div class="result-header">
+              <div class="result-icon">✓</div>
+              <div>
+                <div class="result-title">拆分成功</div>
+                <div id="resultMeta" class="result-meta">已提取 0 页</div>
+              </div>
+            </div>
+            <a id="downloadBtn" href="#" class="action-btn btn-success">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              下载 PDF
+            </a>
+          </div>
+        </div>
+
+        <!-- 右侧预览面板 -->
+        <div class="preview-panel">
+          <div class="preview-header">
+            <div class="preview-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              页面预览
+              <span id="previewCount" class="preview-count">0</span>
+            </div>
+            <div class="preview-actions">
+              <button id="selectAllBtn" class="preview-action-btn">全选</button>
+              <button id="clearSelectionBtn" class="preview-action-btn">清空</button>
+            </div>
+          </div>
+          
+          <div id="pagesContainer">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <p>请先上传 PDF 文件</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 进度遮罩 -->
+  <div id="progressOverlay" class="progress-overlay">
+    <div class="progress-spinner"></div>
+    <div id="progressTitle" class="progress-title">正在处理...</div>
+    <div class="progress-hint">文件仅在本地处理，请勿关闭页面</div>
+    <div class="progress-bar-wrapper">
+      <div id="progressBar" class="progress-bar" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- Footer 页脚 -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-links">
+        <a href="mailto:269452034@qq.com" class="footer-email" id="email-copy">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+          <span>269452034@qq.com</span>
+        </a>
+      </div>
+      <p class="footer-copyright">© 2025 Jack Ding. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="../../assets/js/main.js"></script>
+  <!-- PDF-lib 用于处理 PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <!-- PDF.js 用于渲染预览 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // ========================================
+    // PDF 拆分器核心逻辑
+    // ========================================
+    
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    // 状态管理
+    let pdfDocument = null;
+    let pdfBytes = null;
+    let totalPageCount = 0;
+    let selectedPages = new Set();
+    let pageThumbnails = new Map();
+    
+    // DOM 元素
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileNameEl = document.getElementById('fileName');
+    const fileMetaEl = document.getElementById('fileMeta');
+    const removeFileBtn = document.getElementById('removeFile');
+    const pageInput = document.getElementById('pageInput');
+    const pageError = document.getElementById('pageError');
+    const totalPagesEl = document.getElementById('totalPages');
+    const selectedPagesEl = document.getElementById('selectedPages');
+    const previewCountEl = document.getElementById('previewCount');
+    const pagesContainer = document.getElementById('pagesContainer');
+    const splitBtn = document.getElementById('splitBtn');
+    const resultCard = document.getElementById('resultCard');
+    const resultMeta = document.getElementById('resultMeta');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const progressOverlay = document.getElementById('progressOverlay');
+    const progressTitle = document.getElementById('progressTitle');
+    const progressBar = document.getElementById('progressBar');
+    
+    // 上传区域点击
+    uploadArea.addEventListener('click', () => fileInput.click());
+    
+    // 文件选择
+    fileInput.addEventListener('change', handleFileSelect);
+    
+    // 拖拽上传
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('upload-area--active');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('upload-area--active');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('upload-area--active');
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === 'application/pdf') {
+        processFile(files[0]);
+      }
+    });
+    
+    // 处理文件选择
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) processFile(file);
+    }
+    
+    // 处理文件
+    async function processFile(file) {
+      showProgress('正在读取文件...', 0);
+      
+      try {
+        pdfBytes = await file.arrayBuffer();
+        pdfDocument = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+        totalPageCount = pdfDocument.numPages;
+        
+        // 更新 UI
+        fileNameEl.textContent = file.name;
+        fileMetaEl.textContent = `${totalPageCount} 页 · ${formatFileSize(file.size)}`;
+        fileInfo.style.display = 'flex';
+        uploadArea.style.display = 'none';
+        
+        totalPagesEl.textContent = totalPageCount;
+        previewCountEl.textContent = totalPageCount;
+        
+        pageInput.disabled = false;
+        splitBtn.disabled = false;
+        
+        hideProgress();
+        
+        // 渲染缩略图
+        await renderThumbnails();
+        
+        // 默认全选
+        selectAll();
+        
+      } catch (error) {
+        console.error('读取 PDF 失败:', error);
+        alert('读取 PDF 文件失败，请检查文件是否损坏');
+        hideProgress();
+      }
+    }
+    
+    // 渲染缩略图
+    async function renderThumbnails() {
+      pagesContainer.innerHTML = '<div class="pages-grid" id="pagesGrid"></div>';
+      const grid = document.getElementById('pagesGrid');
+      
+      for (let i = 1; i <= totalPageCount; i++) {
+        const pageItem = document.createElement('div');
+        pageItem.className = 'page-item';
+        pageItem.dataset.page = i;
+        pageItem.innerHTML = `
+          <canvas class="page-thumbnail" id="thumb-${i}"></canvas>
+          <span class="page-number">第 ${i} 页</span>
+        `;
+        pageItem.addEventListener('click', () => togglePage(i));
+        grid.appendChild(pageItem);
+        
+        // 渲染缩略图
+        renderPageThumbnail(i);
+      }
+    }
+    
+    // 渲染单页缩略图
+    async function renderPageThumbnail(pageNum) {
+      try {
+        const page = await pdfDocument.getPage(pageNum);
+        const canvas = document.getElementById(`thumb-${pageNum}`);
+        const ctx = canvas.getContext('2d');
+        
+        const scale = 0.3;
+        const viewport = page.getViewport({ scale });
+        
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        page.cleanup();
+      } catch (error) {
+        console.error(`渲染第 ${pageNum} 页失败:`, error);
+      }
+    }
+    
+    // 切换页面选择
+    function togglePage(pageNum) {
+      const item = document.querySelector(`.page-item[data-page="${pageNum}"]`);
+      if (selectedPages.has(pageNum)) {
+        selectedPages.delete(pageNum);
+        item.classList.remove('selected');
+      } else {
+        selectedPages.add(pageNum);
+        item.classList.add('selected');
+      }
+      updateSelectionUI();
+    }
+    
+    // 更新选择 UI
+    function updateSelectionUI() {
+      selectedPagesEl.textContent = selectedPages.size;
+      updatePageInput();
+      
+      // 更新缩略图选中状态
+      document.querySelectorAll('.page-item').forEach(item => {
+        const pageNum = parseInt(item.dataset.page);
+        item.classList.toggle('selected', selectedPages.has(pageNum));
+      });
+    }
+    
+    // 更新页码输入框
+    function updatePageInput() {
+      if (selectedPages.size === 0) {
+        pageInput.value = '';
+        return;
+      }
+      
+      const pages = Array.from(selectedPages).sort((a, b) => a - b);
+      pageInput.value = compressPageRanges(pages);
+    }
+    
+    // 压缩页码范围
+    function compressPageRanges(pages) {
+      if (pages.length === 0) return '';
+      
+      const ranges = [];
+      let start = pages[0];
+      let end = pages[0];
+      
+      for (let i = 1; i < pages.length; i++) {
+        if (pages[i] === end + 1) {
+          end = pages[i];
+        } else {
+          ranges.push(start === end ? `${start}` : `${start}-${end}`);
+          start = end = pages[i];
+        }
+      }
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      
+      return ranges.join(', ');
+    }
+    
+    // 解析页码输入
+    function parsePageInput(input) {
+      const pages = new Set();
+      const parts = input.split(',').map(p => p.trim()).filter(p => p);
+      
+      for (const part of parts) {
+        if (part.includes('-')) {
+          const [start, end] = part.split('-').map(p => parseInt(p.trim()));
+          if (!isNaN(start) && !isNaN(end) && start <= end) {
+            for (let i = Math.max(1, start); i <= Math.min(end, totalPageCount); i++) {
+              pages.add(i);
+            }
+          }
+        } else {
+          const page = parseInt(part);
+          if (!isNaN(page) && page >= 1 && page <= totalPageCount) {
+            pages.add(page);
+          }
+        }
+      }
+      
+      return pages;
+    }
+    
+    // 页码输入监听
+    pageInput.addEventListener('input', () => {
+      const input = pageInput.value.trim();
+      if (!input) {
+        selectedPages.clear();
+        updateSelectionUI();
+        pageError.classList.remove('show');
+        pageInput.classList.remove('page-input-error');
+        return;
+      }
+      
+      const newPages = parsePageInput(input);
+      if (newPages.size === 0) {
+        pageError.classList.add('show');
+        pageInput.classList.add('page-input-error');
+      } else {
+        pageError.classList.remove('show');
+        pageInput.classList.remove('page-input-error');
+        selectedPages = newPages;
+        updateSelectionUI();
+      }
+    });
+    
+    // 快速选择按钮
+    document.querySelectorAll('.quick-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.dataset.action;
+        switch (action) {
+          case 'all':
+            selectAll();
+            break;
+          case 'odd':
+            selectOdd();
+            break;
+          case 'even':
+            selectEven();
+            break;
+          case 'invert':
+            invertSelection();
+            break;
+          case 'clear':
+            clearSelection();
+            break;
+        }
+      });
+    });
+    
+    // 全选
+    function selectAll() {
+      selectedPages = new Set(Array.from({ length: totalPageCount }, (_, i) => i + 1));
+      updateSelectionUI();
+    }
+    
+    // 选择奇数页
+    function selectOdd() {
+      selectedPages.clear();
+      for (let i = 1; i <= totalPageCount; i += 2) {
+        selectedPages.add(i);
+      }
+      updateSelectionUI();
+    }
+    
+    // 选择偶数页
+    function selectEven() {
+      selectedPages.clear();
+      for (let i = 2; i <= totalPageCount; i += 2) {
+        selectedPages.add(i);
+      }
+      updateSelectionUI();
+    }
+    
+    // 反选
+    function invertSelection() {
+      const newSelection = new Set();
+      for (let i = 1; i <= totalPageCount; i++) {
+        if (!selectedPages.has(i)) {
+          newSelection.add(i);
+        }
+      }
+      selectedPages = newSelection;
+      updateSelectionUI();
+    }
+    
+    // 清空选择
+    function clearSelection() {
+      selectedPages.clear();
+      updateSelectionUI();
+    }
+    
+    // 预览区按钮
+    document.getElementById('selectAllBtn').addEventListener('click', selectAll);
+    document.getElementById('clearSelectionBtn').addEventListener('click', clearSelection);
+    
+    // 删除文件
+    removeFileBtn.addEventListener('click', () => {
+      pdfDocument = null;
+      pdfBytes = null;
+      totalPageCount = 0;
+      selectedPages.clear();
+      pageThumbnails.clear();
+      
+      fileInput.value = '';
+      fileInfo.style.display = 'none';
+      uploadArea.style.display = 'block';
+      
+      pageInput.value = '';
+      pageInput.disabled = true;
+      splitBtn.disabled = true;
+      
+      totalPagesEl.textContent = '0';
+      selectedPagesEl.textContent = '0';
+      previewCountEl.textContent = '0';
+      
+      resultCard.style.display = 'none';
+      
+      pagesContainer.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <p>请先上传 PDF 文件</p>
+        </div>
+      `;
+    });
+    
+    // 拆分按钮
+    splitBtn.addEventListener('click', async () => {
+      if (selectedPages.size === 0) {
+        alert('请至少选择一页');
+        return;
+      }
+      
+      showProgress('正在拆分 PDF...', 30);
+      
+      try {
+        const { PDFDocument } = PDFLib;
+        const sourcePdf = await PDFDocument.load(pdfBytes);
+        const newPdf = await PDFDocument.create();
+        
+        const sortedPages = Array.from(selectedPages).sort((a, b) => a - b);
+        
+        showProgress('正在提取页面...', 60);
+        
+        for (let i = 0; i < sortedPages.length; i++) {
+          const pageNum = sortedPages[i];
+          const [copiedPage] = await newPdf.copyPages(sourcePdf, [pageNum - 1]);
+          newPdf.addPage(copiedPage);
+          
+          const progress = 60 + Math.round((i + 1) / sortedPages.length * 30);
+          updateProgress(progress);
+        }
+        
+        showProgress('正在生成文件...', 90);
+        
+        const newPdfBytes = await newPdf.save();
+        const blob = new Blob([newPdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        
+        // 设置下载
+        const originalName = fileNameEl.textContent.replace('.pdf', '');
+        downloadBtn.href = url;
+        downloadBtn.download = `${originalName}_split.pdf`;
+        
+        // 显示结果
+        resultMeta.textContent = `已提取 ${sortedPages.length} 页`;
+        resultCard.style.display = 'block';
+        
+        hideProgress();
+        
+        // 自动滚动到结果
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+      } catch (error) {
+        console.error('拆分 PDF 失败:', error);
+        alert('拆分 PDF 失败，请重试');
+        hideProgress();
+      }
+    });
+    
+    // 进度控制
+    function showProgress(title, percent) {
+      progressTitle.textContent = title;
+      progressBar.style.width = `${percent}%`;
+      progressOverlay.classList.add('active');
+    }
+    
+    function updateProgress(percent) {
+      progressBar.style.width = `${percent}%`;
+    }
+    
+    function hideProgress() {
+      progressOverlay.classList.remove('active');
+    }
+    
+    // 格式化文件大小
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+  </script>
+</body>
+</html>
