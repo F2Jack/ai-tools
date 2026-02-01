@@ -4,8 +4,7 @@
 
 ## 🚀 访问地址
 
-- **GitHub Pages**: https://jackding.github.io/jack-tools/
-- **Vercel**: https://jack-tools.vercel.app/
+- **GitHub Pages**: https://f2jack.github.io/ai-tools/
 
 ## 📁 项目结构
 
