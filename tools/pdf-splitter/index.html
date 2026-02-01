@@ -955,19 +955,27 @@
       updateSelectionUI();
     }
     
-    // 更新选择 UI
+    // 更新选择 UI（用于缩略图点击时）
     function updateSelectionUI() {
       selectedPagesEl.textContent = selectedPages.size;
-      updatePageInput();
-      
-      // 更新缩略图选中状态
+      updatePageInput(); // 缩略图点击时立即更新输入框
+      updateThumbnailSelection();
+    }
+    
+    // 仅更新统计显示（不修改输入框）
+    function updateSelectionStats() {
+      selectedPagesEl.textContent = selectedPages.size;
+    }
+    
+    // 仅更新缩略图选中状态
+    function updateThumbnailSelection() {
       document.querySelectorAll('.page-item').forEach(item => {
         const pageNum = parseInt(item.dataset.page);
         item.classList.toggle('selected', selectedPages.has(pageNum));
       });
     }
     
-    // 更新页码输入框
+    // 更新页码输入框（将选择压缩为简写格式）
     function updatePageInput() {
       if (selectedPages.size === 0) {
         pageInput.value = '';
@@ -1024,35 +1032,63 @@
       return pages;
     }
     
-    // 页码输入监听
+    // 页码输入监听 - 使用防抖避免输入过程中频繁更新
+    let inputTimeout = null;
     pageInput.addEventListener('input', () => {
+      // 清除之前的定时器
+      if (inputTimeout) {
+        clearTimeout(inputTimeout);
+      }
+      
       const input = pageInput.value.trim();
+      
+      // 如果输入为空，立即清空选择
       if (!input) {
         selectedPages.clear();
-        updateSelectionUI();
+        updateSelectionStats();
+        updateThumbnailSelection();
         pageError.classList.remove('show');
         pageInput.classList.remove('page-input-error');
         return;
       }
       
+      // 检查是否以分隔符结尾（用户可能正在输入）
+      const isTyping = /[,，\-\s]$/.test(pageInput.value);
+      
+      // 解析页码
       const newPages = parsePageInput(input);
-      if (newPages.size === 0) {
+      
+      // 更新错误状态
+      if (newPages.size === 0 && !isTyping) {
         pageError.classList.add('show');
         pageInput.classList.add('page-input-error');
       } else {
         pageError.classList.remove('show');
         pageInput.classList.remove('page-input-error');
-        selectedPages = newPages;
-        updateSelectionUI();
       }
+      
+      // 更新选择
+      if (newPages.size > 0) {
+        selectedPages = newPages;
+        updateSelectionStats();
+        updateThumbnailSelection();
+      }
+      
+      // 如果用户停止输入 500ms 后才压缩显示（且不以分隔符结尾）
+      inputTimeout = setTimeout(() => {
+        if (!isTyping && selectedPages.size > 0) {
+          updatePageInput();
+        }
+      }, 500);
     });
     
-    // 输入验证：只允许数字、逗号、空格、横杠
-    pageInput.addEventListener('input', (e) => {
-      // 过滤非法字符，保留数字、中英文逗号、横杠、空格
-      const cleaned = pageInput.value.replace(/[^0-9,，\-\s]/g, '');
-      if (pageInput.value !== cleaned) {
-        pageInput.value = cleaned;
+    // 失去焦点时立即压缩显示
+    pageInput.addEventListener('blur', () => {
+      if (inputTimeout) {
+        clearTimeout(inputTimeout);
+      }
+      if (selectedPages.size > 0) {
+        updatePageInput();
       }
     });
     
