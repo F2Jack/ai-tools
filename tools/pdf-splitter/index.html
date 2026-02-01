@@ -1047,32 +1047,12 @@
       }
     });
     
-    // 确保逗号可以输入（处理某些输入法拦截问题）
-    pageInput.addEventListener('keydown', (e) => {
-      // 允许逗号、数字、退格、删除、方向键等
-      const allowedKeys = [
-        'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape',
-        'Home', 'End', ' ', '-'
-      ];
-      
-      // 允许逗号（英文和中文）
-      if (e.key === ',' || e.key === '，' || e.code === 'Comma') {
-        return; // 允许输入
-      }
-      
-      // 允许数字
-      if (/^[0-9]$/.test(e.key)) {
-        return; // 允许输入
-      }
-      
-      // 允许特定功能键
-      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
-        return; // 允许输入
-      }
-      
-      // 阻止其他字符（防止输入字母等）
-      if (e.key.length === 1 && !/^[0-9,，\-\s]$/.test(e.key)) {
-        e.preventDefault();
+    // 输入验证：只允许数字、逗号、空格、横杠
+    pageInput.addEventListener('input', (e) => {
+      // 过滤非法字符，保留数字、中英文逗号、横杠、空格
+      const cleaned = pageInput.value.replace(/[^0-9,，\-\s]/g, '');
+      if (pageInput.value !== cleaned) {
+        pageInput.value = cleaned;
       }
     });
     
