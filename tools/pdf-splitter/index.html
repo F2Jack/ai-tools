@@ -258,6 +258,14 @@
       transition: var(--transition);
       border: none;
       cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .action-btn span,
+    .action-btn svg {
+      position: relative;
+      z-index: 1;
     }
     
     .action-btn:disabled {
@@ -270,8 +278,20 @@
       color: white;
     }
     
-    .btn-primary:hover:not(:disabled) {
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
       background: var(--color-accent-hover);
+      opacity: 0;
+      transition: var(--transition);
+    }
+    
+    .btn-primary:hover:not(:disabled)::before {
+      opacity: 1;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
       transform: translateY(-1px);
       box-shadow: var(--shadow-md);
     }
@@ -848,8 +868,10 @@
       showProgress('正在读取文件...', 0);
       
       try {
-        pdfBytes = await file.arrayBuffer();
-        pdfDocument = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+        // 保存 ArrayBuffer 的副本，避免被 pdf.js 锁定
+        const fileArrayBuffer = await file.arrayBuffer();
+        pdfBytes = fileArrayBuffer.slice(0);
+        pdfDocument = await pdfjsLib.getDocument({ data: fileArrayBuffer }).promise;
         totalPageCount = pdfDocument.numPages;
         
         // 更新 UI
@@ -974,13 +996,14 @@
       }
       ranges.push(start === end ? `${start}` : `${start}-${end}`);
       
-      return ranges.join(', ');
+      return ranges.join(', ');  // 使用英文逗号分隔
     }
     
     // 解析页码输入
     function parsePageInput(input) {
       const pages = new Set();
-      const parts = input.split(',').map(p => p.trim()).filter(p => p);
+      // 支持英文逗号和中文逗号
+      const parts = input.split(/[,，]/).map(p => p.trim()).filter(p => p);
       
       for (const part of parts) {
         if (part.includes('-')) {
@@ -1021,6 +1044,35 @@
         pageInput.classList.remove('page-input-error');
         selectedPages = newPages;
         updateSelectionUI();
+      }
+    });
+    
+    // 确保逗号可以输入（处理某些输入法拦截问题）
+    pageInput.addEventListener('keydown', (e) => {
+      // 允许逗号、数字、退格、删除、方向键等
+      const allowedKeys = [
+        'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape',
+        'Home', 'End', ' ', '-'
+      ];
+      
+      // 允许逗号（英文和中文）
+      if (e.key === ',' || e.key === '，' || e.code === 'Comma') {
+        return; // 允许输入
+      }
+      
+      // 允许数字
+      if (/^[0-9]$/.test(e.key)) {
+        return; // 允许输入
+      }
+      
+      // 允许特定功能键
+      if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+        return; // 允许输入
+      }
+      
+      // 阻止其他字符（防止输入字母等）
+      if (e.key.length === 1 && !/^[0-9,，\-\s]$/.test(e.key)) {
+        e.preventDefault();
       }
     });
     
@@ -1096,6 +1148,10 @@
     
     // 删除文件
     removeFileBtn.addEventListener('click', () => {
+      // 释放资源
+      if (pdfDocument) {
+        pdfDocument.destroy();
+      }
       pdfDocument = null;
       pdfBytes = null;
       totalPageCount = 0;
