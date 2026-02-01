@@ -71,7 +71,10 @@
       },
       auth: {
         type: 'token',
-        token: 'pat_MfLpdd1fSxSWohaPZbCrHoMsskhatuuz2tL4kPm7lxN593S1v3ZNIXywNl15tgF8'
+        token: 'pat_MfLpdd1fSxSWohaPZbCrHoMsskhatuuz2tL4kPm7lxN593S1v3ZNIXywNl15tgF8',
+        onRefreshToken: function() {
+          return 'pat_MfLpdd1fSxSWohaPZbCrHoMsskhatuuz2tL4kPm7lxN593S1v3ZNIXywNl15tgF8';
+        }
       }
     });
   </script>
